@@ -146,19 +146,133 @@ nav.addEventListener('mouseout', function (e) {
 });
 
 // Sticky navigation
-const initialCoords = section1.getBoundingClientRect();
 
-window.addEventListener('scroll', function () {
-  if (window.scrollY > initialCoords.top) {
+const navHeight = nav.getBoundingClientRect().height;
+
+const stickyNav = function (entries) {
+  const [entry] = entries;
+
+  if (!entry.isIntersecting) {
     nav.classList.add('sticky');
   } else {
     nav.classList.remove('sticky');
   }
+};
+
+const obsOptions = {
+  root: null,
+  threshold: 0,
+  rootMargin: `-${navHeight}px`,
+};
+
+const headerObserver = new IntersectionObserver(stickyNav, obsOptions);
+headerObserver.observe(header);
+
+// Reveal sections
+
+const revealSection = function (entries, observer) {
+  const [entry] = entries;
+
+  // her section'ın "threshold" da verilen oran kadar gözüktüğünde çalışması için --özellikle section 1 için--
+  if (!entry.isIntersecting) return;
+
+  // çakışan sekmelerdeki class'ı kaldırır
+  entry.target.classList.remove('section--hidden');
+
+  // for stop observe
+  observer.unobserve(entry.target);
+};
+
+const sectionObserver = new IntersectionObserver(revealSection, {
+  root: null,
+  threshold: 0.2,
 });
 
-/// For mouseenter example
-// const alertH1 = function (e) {
-//   alert('Welcome !');
-//   h1.removeEventListener('mouseenter', alertH1);
-// };
-// h1.addEventListener('mouseenter', alertH1);
+allSections.forEach(function (section) {
+  sectionObserver.observe(section);
+  // section.classList.add('section--hidden');
+});
+
+// Lazy load images
+const imgTargets = document.querySelectorAll('img[data-src]');
+
+const loadImg = function (entries, observer) {
+  const [entry] = entries;
+
+  if (!entry.isIntersecting) return;
+
+  // Replace src with data-src
+  entry.target.src = entry.target.dataset.src;
+
+  entry.target.addEventListener('load', function () {
+    entry.target.classList.remove('lazy-img');
+  });
+
+  observer.unobserve(entry.target);
+};
+
+const imgOptions = {
+  root: null,
+  threshold: 0,
+  rootMargin: '200px',
+};
+
+const imgObserver = new IntersectionObserver(loadImg, imgOptions);
+imgTargets.forEach(img => imgObserver.observe(img));
+
+// SLİDER
+const slides = document.querySelectorAll('.slide');
+const btnLeft = document.querySelector('.slider__btn--left');
+const btnRight = document.querySelector('.slider__btn--right');
+
+let curSlide = 0;
+const maxSlide = slides.length;
+
+// const slider = document.querySelector('.slider');
+// slider.style.transform = 'scale(0.4) translateX(-800px)';
+// slider.style.overflow = 'visible';
+
+// slides.forEach((s, i) => (s.style.transform = `translateX(${100 * i}%)`));
+// 0%, 100%, 200%, 300%
+
+const goToSlide = function (slide) {
+  slides.forEach(
+    (s, i) => (s.style.transform = `translateX(${100 * (i - slide)}%)`)
+    // 0%, 100%, 200%, 300%
+  );
+};
+goToSlide(0);
+
+// Next slide
+const nextSlide = function () {
+  if (curSlide === maxSlide - 1) {
+    curSlide = 0;
+  } else {
+    curSlide++;
+  }
+  goToSlide(curSlide);
+};
+
+const prevSlide = function () {
+  if (curSlide === 0) {
+    curSlide = maxSlide - 1;
+  } else {
+    curSlide--;
+  }
+  goToSlide(curSlide);
+};
+
+btnRight.addEventListener('click', nextSlide);
+btnLeft.addEventListener('click', prevSlide);
+
+// 0%, 100%, 200%, 300%
+
+// Previous slide
+// btnLeft.addEventListener('click', function () {
+//   if (curSlide == 0) {
+//     curSlide = 0;
+//   } else {
+//     curSlide--;
+//   }
+//   goToSlide(curSlide);
+// });
